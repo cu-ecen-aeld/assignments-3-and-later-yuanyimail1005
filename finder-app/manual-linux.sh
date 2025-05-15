@@ -13,9 +13,6 @@ FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
 
-export PATH=/home/eric/Code/EmbedLinux/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin:/home/eric/Code/EmbedLinux/assignment-3-yuanyimail1005:/home/eric/Code/EmbedLinux/assignment-3-yuanyimail1005:/home/eric/Code/EmbedLinux/assignment-3-yuanyimail1005/finder-app:$PATH
-
-
 if [ $# -lt 1 ]
 then
 	echo "Using default directory ${OUTDIR} for output"
