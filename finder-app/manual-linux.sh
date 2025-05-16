@@ -122,3 +122,4 @@ find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
 # TODO: Create initramfs.cpio.gz
 cd ${OUTDIR}
 gzip -f initramfs.cpio
+
