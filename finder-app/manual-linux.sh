@@ -14,6 +14,7 @@ ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
 
 export PATH=/home/eric:/usr/local/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu/bin:$PATH
+SYSROOT_PATH=$(${CROSS_COMPILE}gcc --print-sysroot)
 
 if [ $# -lt 1 ]
 then
@@ -89,11 +90,15 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
-TOOLCHAIN_DIR=/usr/local/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu
-cp ${TOOLCHAIN_DIR}/aarch64-none-linux-gnu/libc/lib/ld-linux-aarch64.so.1 lib
-cp ${TOOLCHAIN_DIR}/aarch64-none-linux-gnu/libc/lib64/libm.so.6 lib64
-cp ${TOOLCHAIN_DIR}/aarch64-none-linux-gnu/libc/lib64/libresolv.so.2 lib64
-cp ${TOOLCHAIN_DIR}/aarch64-none-linux-gnu/libc/lib64/libc.so.6 lib64
+#TOOLCHAIN_DIR=/usr/local/arm-gnu-toolchain-13.3.rel1-x86_64-aarch64-none-linux-gnu
+#cp ${TOOLCHAIN_DIR}/aarch64-none-linux-gnu/libc/lib/ld-linux-aarch64.so.1 lib
+#cp ${TOOLCHAIN_DIR}/aarch64-none-linux-gnu/libc/lib64/libm.so.6 lib64
+#cp ${TOOLCHAIN_DIR}/aarch64-none-linux-gnu/libc/lib64/libresolv.so.2 lib64
+#cp ${TOOLCHAIN_DIR}/aarch64-none-linux-gnu/libc/lib64/libc.so.6 lib64
+sudo cp ${SYSROOT_PATH}/lib/ld-linux-aarch64.so.1 lib
+sudo cp ${SYSROOT_PATH}/lib64/libm.so.6 lib64
+sudo cp ${SYSROOT_PATH}/lib64/libresolv.so.2 lib64
+sudo cp ${SYSROOT_PATH}/lib64/libc.so.6 lib64
 
 # TODO: Make device nodes
 sudo mknod -m 666 dev/null c 1 3
