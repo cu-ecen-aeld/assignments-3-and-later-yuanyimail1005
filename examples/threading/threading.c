@@ -14,9 +14,9 @@ void* threadfunc(void* thread_param)
     // TODO: wait, obtain mutex, wait, release mutex as described by thread_data structure
     // hint: use a cast like the one below to obtain thread arguments from your parameter
     struct thread_data* thread_func_args = (struct thread_data *) thread_param;
-    usleep(thread_func_args->wait_to_obtain_ms);
+    usleep(thread_func_args->wait_to_obtain_ms * 1000);
     pthread_mutex_lock(thread_func_args->mutex);
-    usleep(thread_func_args->wait_to_release_ms);
+    usleep(thread_func_args->wait_to_release_ms * 1000);
     pthread_mutex_unlock(thread_func_args->mutex);
     thread_func_args->thread_complete_success = true;
 
@@ -49,17 +49,10 @@ bool start_thread_obtaining_mutex(pthread_t *thread, pthread_mutex_t *mutex,int 
 
     pthread_mutex_init(myData->mutex, NULL);
 
-    if (pthread_create(&myThread, NULL, threadfunc, myData) != 0) {
-        fprintf(stderr, "Thread creation failed!\n");
-        free(myData);
-        pthread_mutex_destroy(myData->mutex);
-        return false;
+    if (pthread_create(&myThread, NULL, threadfunc, myData) == 0) {
+        return true;
     }
 
-    pthread_join(myThread, NULL);
-
-    pthread_mutex_destroy(myData->mutex);
-
-    return true;
+    return false;
 }
 
