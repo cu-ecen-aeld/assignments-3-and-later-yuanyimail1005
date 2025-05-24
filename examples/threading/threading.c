@@ -46,8 +46,6 @@ bool start_thread_obtaining_mutex(pthread_t *thread, pthread_mutex_t *mutex,int 
     myData->wait_to_release_ms = wait_to_release_ms;
     myData->mutex = mutex;
 
-    pthread_mutex_init(myData->mutex, NULL);
-
     if (pthread_create(thread, NULL, threadfunc, myData) == 0) {
         return true;
     }
