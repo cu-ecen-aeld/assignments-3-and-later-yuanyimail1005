@@ -55,18 +55,27 @@ void *handle_client(void *arg) {
 
 	fclose(file);
 	close(info->client_fd);
-    return NULL;
+    pthread_exit(NULL);
 }
 
 void sig_handler(int sig) {
-    if (server_fd) close(server_fd);
+    if (server_fd) {
+        shutdown(server_fd, SHUT_RDWR);
+        syslog(LOG_ERR, "shutdown server socket");
+    }
     while (head) {
+        pthread_cancel(head->thread);
         pthread_join(head->thread, NULL);
+        if (head->client_fd) {
+            shutdown(head->client_fd, SHUT_RDWR);
+            syslog(LOG_ERR, "showdown client socket");
+        }
         thread_info_t *temp = head;
         head = head->next;
         free(temp);
     }
     pthread_cancel(timestamp_thread);
+    pthread_join(timestamp_thread, NULL);
     pthread_mutex_destroy(&file_mutex);
     remove(FILEPATH);
     closelog();
@@ -88,24 +97,39 @@ void *append_timestamp(void *arg) {
         close(fd);
         pthread_mutex_unlock(&file_mutex);
     }
-    return NULL;
+    pthread_exit(NULL);
 }
 
 void start_server(int daemon_mode) {
     struct sockaddr_in server_addr, client_addr;
     socklen_t client_len = sizeof(client_addr);
+    int opt = 1;
 
     pthread_mutex_init(&file_mutex, NULL);
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0) {
+        syslog(LOG_ERR, "Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Set SO_REUSEADDR option
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        syslog(LOG_ERR, "setsockopt(SO_REUSEADDR) failed");
+        exit(EXIT_FAILURE);
+    }
+
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(PORT);
 
+
     if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        syslog(LOG_ERR, "Binding failed");
+        syslog(LOG_ERR, "Error on binding socket");
         close(server_fd);
         exit(EXIT_FAILURE);
+    } else {
+        syslog(LOG_ERR, "Success on binding socket");
     }
 
     if (daemon_mode) {
@@ -115,6 +139,7 @@ void start_server(int daemon_mode) {
             close(server_fd);
             exit(EXIT_FAILURE);
         } else if (pid > 0) {
+            close(server_fd);
             exit(0);
         }
     }
@@ -142,7 +167,6 @@ void start_server(int daemon_mode) {
         pthread_create(&new_thread->thread, NULL, handle_client, new_thread);
     }
 
-    pthread_join(timestamp_thread, NULL);
     return;
 }
 
