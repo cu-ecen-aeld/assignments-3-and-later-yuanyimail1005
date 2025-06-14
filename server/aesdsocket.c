@@ -55,7 +55,7 @@ void *handle_client(void *arg) {
 
 	fclose(file);
 	close(info->client_fd);
-    pthread_exit(NULL);
+    return NULL;
 }
 
 void sig_handler(int sig) {
@@ -97,7 +97,7 @@ void *append_timestamp(void *arg) {
         close(fd);
         pthread_mutex_unlock(&file_mutex);
     }
-    pthread_exit(NULL);
+    return NULL;
 }
 
 void start_server(int daemon_mode) {
