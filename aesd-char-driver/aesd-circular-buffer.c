@@ -39,7 +39,7 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
         index++;
     }
     if (remaining_offset == 0) {
-        return buffer->entry[index-1].buffptr;
+        return &buffer->entry[index-1];
     }
 
     return NULL;
