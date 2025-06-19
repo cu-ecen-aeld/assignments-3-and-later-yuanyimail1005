@@ -76,16 +76,16 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
     /**
     * TODO: implement per description
     */
-    bool first_time = false;
+    bool move_out_offs = false;
 
-    if (buffer->entry[buffer->in_offs].buffptr == NULL) {
-        first_time = true;
+    if ((buffer->entry[buffer->out_offs].buffptr != NULL) && (buffer->out_offs == buffer->in_offs)) {
+        move_out_offs = true;
     }
 
     buffer->entry[buffer->in_offs].buffptr = add_entry->buffptr;
     buffer->entry[buffer->in_offs].size = add_entry->size;
-    buffer->in_offs = ((buffer->out_offs + 1) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED);
-    if ((buffer->in_offs == ((buffer->out_offs + 1) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED)) && !first_time) { //full
+    buffer->in_offs = ((buffer->in_offs + 1) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED);
+    if (move_out_offs) { //full
         buffer->out_offs = ((buffer->out_offs + 1) % AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED);
     }
 }
@@ -96,7 +96,4 @@ void aesd_circular_buffer_add_entry(struct aesd_circular_buffer *buffer, const s
 void aesd_circular_buffer_init(struct aesd_circular_buffer *buffer)
 {
     memset(buffer,0,sizeof(struct aesd_circular_buffer));
-    for (uint8_t i = 0; i < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED; i++) {
-        buffer->entry[i].buffptr = NULL;
-    }
 }
