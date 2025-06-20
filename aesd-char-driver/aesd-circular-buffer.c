@@ -52,7 +52,7 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
         } else {
             break;
         }
-    } while ((remaining_offset > 0) && (index != buffer->out_offs))
+    } while ((remaining_offset > 0) && (index != buffer->out_offs));
 
     *entry_offset_byte_rtn = remaining_offset;
 
