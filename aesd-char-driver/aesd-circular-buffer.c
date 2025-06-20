@@ -56,7 +56,7 @@ struct aesd_buffer_entry *aesd_circular_buffer_find_entry_offset_for_fpos(struct
 
     *entry_offset_byte_rtn = remaining_offset;
 
-    if (*entry_offset_byte_rtn <= ret_entry->size) {
+    if (*entry_offset_byte_rtn < ret_entry->size) {
         return ret_entry;
     } else {
         return NULL;
