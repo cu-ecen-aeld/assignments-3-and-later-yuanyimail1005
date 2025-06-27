@@ -4,16 +4,17 @@ LDFLAGS ?= -lpthread -lrt
 TARGET = aesdsocket
 SRC = aesdsocket.c
 OBJ = $(SRC:.c=.o)
+EXTRA_CFLAGS ?= -DUSE_AESD_CHAR_DEVICE=1
 
 .PHONY: all clean
 
 all: $(TARGET)
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	$(CC) $(EXTRA_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -c $< -o $@
+	$(CC) $(EXTRA_CFLAGS) $(CFLAGS) $(LDFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(TARGET) $(OBJ)

@@ -10,7 +10,11 @@
 #include <syslog.h>
 
 #define PORT 9000
-#define FILEPATH "/var/tmp/aesdsocketdata"
+#if USE_AESD_CHAR_DEVICE == 1
+	#define FILEPATH "/dev/aesdchar"
+#else
+	#define FILEPATH "var/tmp/aesdsocketdata"
+#endif
 #define BUFFER_SIZE 1024
 
 pthread_mutex_t file_mutex;
@@ -77,7 +81,9 @@ void sig_handler(int sig) {
     pthread_cancel(timestamp_thread);
     pthread_join(timestamp_thread, NULL);
     pthread_mutex_destroy(&file_mutex);
-    remove(FILEPATH);
+    #if USE_AESD_CHAR_DEVICE == 0
+        remove(FILEPATH);
+    #endif
     closelog();
     exit(0);
 }
@@ -151,7 +157,9 @@ void start_server(int daemon_mode) {
         exit(EXIT_FAILURE);
     }
 
-    pthread_create(&timestamp_thread, NULL, append_timestamp, NULL);
+    #if USE_AESD_CHAR_DEVICE == 0
+        pthread_create(&timestamp_thread, NULL, append_timestamp, NULL);
+    #endif
 
     while (1) {
         int client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &client_len);
