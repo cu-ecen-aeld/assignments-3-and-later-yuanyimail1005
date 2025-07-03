@@ -19,6 +19,7 @@
 #include <linux/fs.h> // file_operations
 #include "aesdchar.h"
 #include "aesd-circular-buffer.h"
+#include "aesd_ioctl.h"
 int aesd_major =   0; // use dynamic major
 int aesd_minor =   0;
 
@@ -160,12 +161,97 @@ ssize_t aesd_write(struct file *filp, const char __user *buf, size_t count,
     PDEBUG("write successful, wrote %zd bytes", retval);
     return retval;
 }
+
+loff_t aesd_llseek(struct file *filp, loff_t off, int whence){
+	loff_t new_position;
+	loff_t sum = 0;
+	size_t i;	
+	struct aesd_dev *device = filp->private_data;
+
+	switch (whence) {
+		case SEEK_SET:
+			new_position = off;
+			break;
+		case SEEK_CUR:
+			if(mutex_lock_interruptible(&device->lock)) {
+				PDEBUG("mutex lock failure during llseek");
+				return -ERESTARTSYS;
+			}
+			new_position = filp->f_pos + off;
+			mutex_unlock(&device->lock);
+			break;
+		case SEEK_END:
+			if (mutex_lock_interruptible(&device->lock)) {
+				PDEBUG("mutex lock failure during llseek");
+				return -ERESTARTSYS;
+			}
+			for (i = 0; i < AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED; i++) {
+				sum += device->buffer.entry[i].size;
+			}
+			mutex_unlock(&device->lock);
+			new_position = sum + off;
+			break;
+		default:
+			return -EINVAL;
+	}
+	if (new_position < 0) {
+		return -EINVAL;
+	}
+
+	filp->f_pos = new_position;
+	return new_position;
+}
+
+long aesd_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
+	struct aesd_seekto seekto;
+	int retval = 0;
+    struct aesd_dev *device = filp->private_data;
+
+	switch (cmd) {
+		case AESDCHAR_IOCSEEKTO:
+			if (__copy_from_user(&seekto, (const void __user *)arg, sizeof(seekto))) {
+				return -EFAULT;
+			}
+
+			if (seekto.write_cmd < 0 || seekto.write_cmd > AESDCHAR_MAX_WRITE_OPERATIONS_SUPPORTED) {
+				return -EINVAL;
+			}
+
+			if (mutex_lock_interruptible(&device->lock)) {
+				return -ERESTARTSYS;
+			}
+
+			if (device->buffer.entry[seekto.write_cmd].buffptr == NULL) {
+				return -EINVAL;
+			}
+
+			if (seekto.write_cmd_offset > device->buffer.entry[seekto.write_cmd].size) {
+				 return -EINVAL;
+			}
+
+			loff_t offset = 0;
+			for (int i = 0; i < seekto.write_cmd; i++) {
+				offset += device->buffer.entry[i].size;
+			}
+			
+			offset += seekto.write_cmd_offset;
+			filp->f_pos = offset;
+			mutex_unlock(&device->lock);
+		break;
+		default: 
+			return -ENOTTY;
+	}
+	return retval;
+}
+
 struct file_operations aesd_fops = {
     .owner =    THIS_MODULE,
     .read =     aesd_read,
     .write =    aesd_write,
     .open =     aesd_open,
     .release =  aesd_release,
+    .llseek =   aesd_llseek,
+    .unlocked_ioctl = aesd_ioctl,
 };
 
 static int aesd_setup_cdev(struct aesd_dev *dev)
